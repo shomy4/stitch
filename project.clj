@@ -7,6 +7,8 @@
                  [compojure "1.5.2"]
                  [conman "0.6.3"]
                  [cprop "0.1.10"]
+                 [opencv/opencv "2.4.13"]
+                 [opencv/opencv-native "2.4.13"]
                  [funcool/struct "1.0.0"]
                  [luminus-immutant "0.2.3"]
                  [luminus-migrations "0.3.0"]

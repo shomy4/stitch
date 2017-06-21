@@ -284,12 +284,12 @@
 
 (comment
 
-      (def i1 (read-image-resource "test_stitches/1/a1.JPG"))
-      (def i2 (read-image-resource "test_stitches/1/a2.JPG"))
-      (def i3 (read-image-resource "test_stitches/1/a3.JPG"))
-      (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
-      (def iv [i1 i2 i3 i4])
-      (def s1234 (reduce stitch [i1 i2 i3 i4]))
-      (write-image "test_stitches/1/stitched_1234.jpg" s1234)
+  (def i1 (read-image-resource "test_stitches/1/a1.JPG"))
+  (def i2 (read-image-resource "test_stitches/1/a2.JPG"))
+  (def i3 (read-image-resource "test_stitches/1/a3.JPG"))
+  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def iv [i1 i2 i3 i4])
+  (def s1234 (reduce stitch [i1 i2 i3 i4]))
+  (write-image "test_stitches/1/stitched_test_1234.jpg" s1234)
 
 )
