@@ -22,10 +22,7 @@
   [:div.col-sm-4
      [:img
     {:src      (str "img/scan.jpeg" )
-     :on-click #(session/put!
-                  :modal
-                  (image-modal
-                    (str "img/scan.jpeg" )))}]
+     :on-click #(js/alert "Start Stitching")}]
                     [:div.text-xs-center>div.btn.btn-danger name ]])
 
 (defn gallery [links]
