@@ -20,7 +20,7 @@ WHERE id = :id
 DELETE FROM users
 WHERE id = :id
 
--- :name create-scan! :<!
+-- :name create-scan :insert
 -- :doc creates a new scan record and returns that record
 INSERT INTO scan
 (owner,  name, description, status)
@@ -50,7 +50,7 @@ INSERT INTO image
 (image,  thumbnail, geometry, scan_id)
 VALUES (:image,  :thumbnail, ST_SetSRID(ST_MakePoint(:long, :lat), 4326), :scan_id)
 RETURNING id
--- :name get-images :? :1
+-- :name get-images
 -- :doc retrieve images given the scan_id.
 SELECT * FROM image
 WHERE scan_id = :scan_id
