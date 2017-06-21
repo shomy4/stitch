@@ -3,6 +3,7 @@
             [stitch.routes.services.auth :as auth]
             [stitch.routes.services.upload-scan :as upload-scan]
             [stitch.routes.services.scans :as scans]
+            [stitch.routes.services.stitch :as stitch]
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
             [compojure.api.upload :refer :all]
@@ -80,4 +81,8 @@
         :middleware [wrap-multipart-params]
         :summary "Handles scan upload"
         :return Result
-        (upload-scan/save-scan! req )))
+        (upload-scan/save-scan! req ))
+    (GET "/stitch/" req
+            :return Scan
+            :summary "Stitches images in provided scan"
+            (stitch/stitching! req)))

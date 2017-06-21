@@ -9,6 +9,17 @@
            goog.net.EventType
            [goog.events EventType]))
 
+(defn handle-stitching [scan_id]
+  (let [req {:uri             "/stitch/"
+             :method          :get
+             :params          {:scan_id scan_id}
+             :handler         #(js/alert "ke")
+             :response-format (ajax/json-response-format {:keywords? true})
+             :format          (ajax/json-request-format)
+             :keywords?       true}]
+    (ajax/ajax-request req)))
+
+
 
 (defn image-modal [link]
  (fn []
@@ -18,12 +29,12 @@
       :src link}]
     [:div.modal-backdrop.fade.in]]))
 
-(defn thumb-link [{:keys [name description]}]
+(defn thumb-link [{:keys [id status name description]}]
   [:div.col-sm-4
      [:img
     {:src      (str "img/scan.jpeg" )
-     :on-click #(js/alert "Start Stitching")}]
-                    [:div.text-xs-center>div.btn.btn-danger name ]])
+     :on-click #(handle-stitching id)}]
+                    [:div.text-xs-center>div.btn.btn-danger name  status]])
 
 (defn gallery [links]
  [:div.text-xs-center
