@@ -197,7 +197,7 @@
         dists   (map #(.distance %) matches)
         d-min (apply min dists)
         d-max (apply max dists)
-        good (filter (fn [x] (<= (.distance x) (max (* 2.4 d-min) 0.024))) matches)]
+        good (filter (fn [x] (<= (.distance x) (max (* 2.6 d-min) 0.026))) matches)]
     (dmatch-mat good)))
 
 (defn calculate-homography [img-a img-b]
@@ -288,6 +288,19 @@
   (def i2 (read-image-resource "test_stitches/1/a2.JPG"))
   (def i3 (read-image-resource "test_stitches/1/a3.JPG"))
   (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def i5 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+
+  (def geocordinates [{:longitude 45.132 :latitude 19.221}
+                {:longitude 45.134 :latitude 19.220}
+                {:longitude 45.099 :latitude 19.220}
+                {:longitude 45.102 :latitude 19.219}
+                {:longitude 45.101 :latitude 19.225}])
+
+  (sort-by #(vec (map % [:longitude :latitude])) geocordinates)
+
+
   (def iv [i1 i2 i3 i4])
   (def s1234 (reduce stitch [i1 i2 i3 i4]))
   (write-image "test_stitches/1/stitched_test_1234.jpg" s1234)

@@ -23,13 +23,13 @@
          {name :name description :description} params
          timestamp-zip-location (str "tmp/" (quot (System/currentTimeMillis) 1000) ".zip")
 
-         scan_id (:id (first (db/create-scan  {:name name :description description :owner (:identity (:session request)) })))
+         scan_id (:id (db/create-scan  {:name name :description description :owner (:identity (:session request)) }))
          destination-location (str "scans/" (:identity (:session request)) "/" scan_id)
          thumbnail-loc (str "thumbnails/" (:identity (:session request)) "/" scan_id)
          destination-thumb-full-location (str thumbnail-dir thumbnail-loc)
-        ]
-
+        ]        
      (clojure.java.io/copy tempfile ( java.io.File.  timestamp-zip-location  ))
+     (fs/mkdirs (str "scans/" (:identity (:session request)) "/" scan_id))
      (co/unzip timestamp-zip-location (str "scans/" (:identity (:session request)) "/" scan_id))
      (println destination-location)
      (doseq [file (fs/list-dir destination-location)]
