@@ -114,7 +114,7 @@
           {"GPSLongitude" :long, "GPSLatitude" :lat})
           long (:long lat-lon-map)
           lat (:lat lat-lon-map)
-          lat-lon (assoc lat-lon-map :long (float (+ (get long 0 ) (/ (get  long 1 ) 60) (/ (get long 2 ) 3600)))
-                                      :lat (float (+ (get lat 0 ) (/ (get  lat 1 ) 60) (/ (get lat 2 ) 3600))))]
+          lat-lon (assoc lat-lon-map :long (+ (get long 0 ) (/ (get  long 1 ) 60) (/ (get long 2 ) 3600))
+                                     :lat  (+ (get lat 0 ) (/ (get  lat 1 ) 60) (/ (get lat 2 ) 3600)))]
           lat-lon
     ))

@@ -7,7 +7,7 @@
 
 
 (def S-SCALE
-  1.5)
+  1.35)
 
 ;; ----------------------------------------------------------------
 ;; Highgui
@@ -197,7 +197,7 @@
         dists   (map #(.distance %) matches)
         d-min (apply min dists)
         d-max (apply max dists)
-        good (filter (fn [x] (<= (.distance x) (max (* 2.6 d-min) 0.026))) matches)]
+        good (filter (fn [x] (<= (.distance x) (max (* 3.5 d-min) 0.0035))) matches)]
     (dmatch-mat good)))
 
 (defn calculate-homography [img-a img-b]
@@ -209,9 +209,10 @@
         algo (algos :orb)
         extractor (DescriptorExtractor/create (:extractor algo))
         matcher (DescriptorMatcher/create (matchers :brute))
-
-        kp-a (detect-keypoints img-a (:detector algo))
-        kp-b (detect-keypoints img-b (:detector algo))
+        img-a-g (convert-to-gray img-a)
+        img-b-g (convert-to-gray img-b)
+        kp-a (detect-keypoints img-a-g (:detector algo))
+        kp-b (detect-keypoints img-b-g (:detector algo))
         desc-a (Mat.)
         desc-b (Mat.)
         matches (MatOfDMatch.)]
@@ -266,9 +267,11 @@
 (defn stitch [img-a img-b]
   (let [res (Mat.)
         homography (calculate-homography img-a img-b)
+        res-cols (.cols img-a)
+        res-rows (.rows img-a)
         cols (.cols img-b)
         rows (.rows img-b)
-        size (Size. (int (* S-SCALE cols)) (int (* S-SCALE rows)))
+        size (Size. (int (* S-SCALE res-cols)) (int (* S-SCALE res-rows)))
         warped-image (warp-perspective img-a homography size res)
         roi (rect 0 0 cols rows )
         res-roi (Mat. res roi)]
@@ -288,9 +291,11 @@
   (def i2 (read-image-resource "test_stitches/1/a2.JPG"))
   (def i3 (read-image-resource "test_stitches/1/a3.JPG"))
   (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
-  (def i5 (read-image-resource "test_stitches/1/a4.JPG"))
-  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
-  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def i5 (read-image-resource "test_stitches/1/a5.JPG"))
+  (def i6 (read-image-resource "test_stitches/1/a6.JPG"))
+  (def i7 (read-image-resource "test_stitches/1/a7.JPG"))
+  (def i8 (read-image-resource "test_stitches/1/a8.JPG"))
+  (def i9 (read-image-resource "test_stitches/1/a9.JPG"))
 
   (def geocordinates [{:longitude 45.132 :latitude 19.221}
                 {:longitude 45.134 :latitude 19.220}
@@ -301,8 +306,9 @@
   (sort-by #(vec (map % [:longitude :latitude])) geocordinates)
 
 
-  (def iv [i1 i2 i3 i4])
-  (def s1234 (reduce stitch [i1 i2 i3 i4]))
-  (write-image "test_stitches/1/stitched_test_1234.jpg" s1234)
+  (def iv1 [i1 i2 i3 i4])
+  (def iv2 [i5 i6])
+  (def s123456789 (reduce stitch iv1))
+  (write-image "test_stitches/1/s56789.jpg" s56789)
 
 )
