@@ -7,7 +7,7 @@
 
 
 (def S-SCALE
-  1.35)
+  1.2)
 
 ;; ----------------------------------------------------------------
 ;; Highgui
@@ -91,10 +91,16 @@
     (Imgproc/resize mat-src mat-dst (Size. size size))
     mat-dst))
 
+(defn resize-to-scale
+  [mat-src scale]
+  (let [mat-dst (Mat.)]
+    (Imgproc/resize mat-src mat-dst (Size. (int (* (.cols mat-src) scale)) (int (* (.rows mat-src) scale))))
+    mat-dst))
+
 (defn blur
-  [img size]
+  [img k-s]
   (let [blurred (clone img)]
-    (Imgproc/blur img blurred (Size. size size) (Point. -1 -1) Imgproc/BORDER_DEFAULT)
+    (Imgproc/blur img blurred (Size. k-s k-s))
     blurred))
 
 (defn threshold
@@ -197,7 +203,7 @@
         dists   (map #(.distance %) matches)
         d-min (apply min dists)
         d-max (apply max dists)
-        good (filter (fn [x] (<= (.distance x) (max (* 3.5 d-min) 0.0035))) matches)]
+        good (filter (fn [x] (<= (.distance x) (max (* 4.5 d-min) 0.0045))) matches)]
     (dmatch-mat good)))
 
 (defn calculate-homography [img-a img-b]
@@ -206,11 +212,11 @@
                :sift {:extractor DescriptorExtractor/SIFT :detector FeatureDetector/SIFT}
                :harris-orb {:extractor DescriptorExtractor/BRIEF :detector FeatureDetector/ORB}}
         matchers {:flann DescriptorMatcher/FLANNBASED, :brute DescriptorMatcher/BRUTEFORCE}
-        algo (algos :orb)
+        algo (algos :surf)
         extractor (DescriptorExtractor/create (:extractor algo))
-        matcher (DescriptorMatcher/create (matchers :brute))
-        img-a-g (convert-to-gray img-a)
-        img-b-g (convert-to-gray img-b)
+        matcher (DescriptorMatcher/create (matchers :flann))
+        img-a-g (blur (convert-to-gray img-a) 5.0)
+        img-b-g (blur (convert-to-gray img-b) 5.0)
         kp-a (detect-keypoints img-a-g (:detector algo))
         kp-b (detect-keypoints img-b-g (:detector algo))
         desc-a (Mat.)
@@ -229,6 +235,8 @@
           img-points-list-b (map #(.pt (get kp-b-vec (:trainIdx %) )) good-matches-vec)
           matK1 (MatOfPoint2f.)
           matK2 (MatOfPoint2f.)]
+
+      (println "Good matches" (count good-matches-vec))
       (.fromList matK1 img-points-list-a)
       (.fromList matK2 img-points-list-b)
       (draw-matches! img-a kp-a img-b kp-b good img-matches)
@@ -306,7 +314,7 @@
   (sort-by #(vec (map % [:longitude :latitude])) geocordinates)
 
 
-  (def iv1 [i1 i2 i3 i4])
+  (def iv1 [i1 i2 i3 i4 i5])
   (def iv2 [i5 i6])
   (def s123456789 (reduce stitch iv1))
   (write-image "test_stitches/1/s56789.jpg" s56789)
