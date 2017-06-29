@@ -36,6 +36,11 @@
   ([img x1 y1 x2 y2 col fill?]
      (Core/rectangle img (Point. x1 y1) (Point. x2 y2) col (if fill? Core/FILLED 1))))
 
+(defn matrix-multiplication [m1 m2]
+  (let [res-mat (Mat.)]
+    (Core/gemm h p2 1  (Mat.) 0 res-mat 0))
+    res-mat
+  )
 ;; ----------------------------------------------------------------
 ;; Feature detection
 ;; ----------------------------------------------------------------
@@ -78,6 +83,7 @@
         a (into-array matches)]
     (.fromArray m a)
     m))
+
 
 
 ;; ----------------------------------------------------------------
@@ -203,7 +209,7 @@
         dists   (map #(.distance %) matches)
         d-min (apply min dists)
         d-max (apply max dists)
-        good (filter (fn [x] (<= (.distance x) (max (* 4.5 d-min) 0.0045))) matches)]
+        good (filter (fn [x] (<= (.distance x) (max (* 5 d-min) 0.005))) matches)]
     (dmatch-mat good)))
 
 (defn calculate-homography [img-a img-b]
@@ -315,8 +321,31 @@
 
 
   (def iv1 [i1 i2 i3 i4 i5])
-  (def iv2 [i5 i6])
-  (def s123456789 (reduce stitch iv1))
-  (write-image "test_stitches/1/s56789.jpg" s56789)
+  (def iv [i2 i1])
+  (def rsiv (map #(resize-to-scale % 0.25) iv))
+  (def keyImage (first rsiv))
+  (def col (.cols keyImage))
+  (def row (.rows keyImage))
+
+  (def keyImage (first rsiv))
+  (def h (calculate-homography (first rsiv) (second rsiv)))
+  (def r1 (Mat.))
+  (def r2 (Mat.))
+  (def r3 (Mat.))
+  (def r4 (Mat.))
+  (def p1 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
+  (.put p1 0 0 (double-array [0.0 0.0 1.0] ))
+  (Core/gemm h p1 1  (Mat.) 0 r1 0)
+  (def p2 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
+  (.put p2 0 0 (double-array [col 0.0 1.0] ))
+  (Core/gemm h p2 1  (Mat.) 0 r2 0)
+  (def p3 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
+  (.put p3 0 0 (double-array [0 row 1.0] ))
+  (Core/gemm h p3 1  (Mat.) 0 r3 0)
+  (def p4 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
+  (.put p4 0 0 (double-array [col row 1.0] ))
+  (Core/gemm h p4 1  (Mat.) 0 r4 0)
+  ;;(def s123456789 (reduce stitch iv1))
+  ;;(write-image "test_stitches/1/s56789.jpg" s56789)
 
 )
