@@ -38,9 +38,9 @@
 
 (defn matrix-multiplication [m1 m2]
   (let [res-mat (Mat.)]
-    (Core/gemm h p2 1  (Mat.) 0 res-mat 0))
-    res-mat
-  )
+    (Core/gemm h p2 1  (Mat.) 0 res-mat 0)
+    res-mat))
+
 ;; ----------------------------------------------------------------
 ;; Feature detection
 ;; ----------------------------------------------------------------
@@ -83,6 +83,14 @@
         a (into-array matches)]
     (.fromArray m a)
     m))
+
+;;Function for initial image base points setup 
+(defn create-base-points [img]
+  (let [rows (.rows img)
+        cols (.cols img)
+        mat-bp (Mat. 4 3 CvType/CV_64FC1 (Scalar. 0 0))]
+        (.put mat-bp 0 0 (double-array [0 0 1 cols 0 1 0 rows 1 cols rows 1] ))
+    mat-bp))
 
 
 
@@ -329,23 +337,10 @@
 
   (def keyImage (first rsiv))
   (def h (calculate-homography (first rsiv) (second rsiv)))
-  (def r1 (Mat.))
-  (def r2 (Mat.))
-  (def r3 (Mat.))
-  (def r4 (Mat.))
-  (def p1 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
-  (.put p1 0 0 (double-array [0.0 0.0 1.0] ))
-  (Core/gemm h p1 1  (Mat.) 0 r1 0)
-  (def p2 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
-  (.put p2 0 0 (double-array [col 0.0 1.0] ))
-  (Core/gemm h p2 1  (Mat.) 0 r2 0)
-  (def p3 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
-  (.put p3 0 0 (double-array [0 row 1.0] ))
-  (Core/gemm h p3 1  (Mat.) 0 r3 0)
-  (def p4 (Mat. 3 1 CvType/CV_64FC1 (Scalar. 0 0)))
-  (.put p4 0 0 (double-array [col row 1.0] ))
-  (Core/gemm h p4 1  (Mat.) 0 r4 0)
-  ;;(def s123456789 (reduce stitch iv1))
-  ;;(write-image "test_stitches/1/s56789.jpg" s56789)
+  (def base-points (create-base-points keyImage))
+  (def base-p-calc
+     (for [x (range 0 (.rows base-points))]
+      (matrix-multiplication h (.t (.row base-points x)))))
+
 
 )
