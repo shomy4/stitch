@@ -26,6 +26,12 @@
 (defn clone [mat]
   (.clone mat))
 
+(defn inverse [mat]
+  (.inv mat))
+
+(defn identity-mat [rows cols type]
+  (Mat/eye rows cols type))
+  
 (defn size
   [img]
   (.size img))
@@ -285,16 +291,21 @@
     (if (< x 0)
       base-atom
        (let [m (matrix-multiplication h (.t (.row base-points x)))]
-        (if (> (first (.get m 0 0)) (:max_x @base-atom))
-          (swap! base-atom  merge {:max_x (first (.get m 0 0))}))
-        (if (> (first (.get m 1 0)) (:max_y @base-atom))
-          (swap! base-atom  merge {:max_y (first (.get m 1 0))}))
-        (if (< (first (.get m 0 0)) (:min_x @base-atom))
-          (swap! base-atom  merge {:min_x (first (.get m 0 0))}))
-        (if (< (first (.get m 1 0)) (:min_y @base-atom))
-          (swap! base-atom  merge {:min_y (first (.get m 1 0))}))
-            (recur (dec x) ))))
+          (if (> (first (.get m 0 0)) (:max_x @base-atom))
+            (swap! base-atom  merge {:max_x (first (.get m 0 0))}))
+          (if (> (first (.get m 1 0)) (:max_y @base-atom))
+            (swap! base-atom  merge {:max_y (first (.get m 1 0))}))
+          (if (< (first (.get m 0 0)) (:min_x @base-atom))
+            (swap! base-atom  merge {:min_x (first (.get m 0 0))}))
+          (if (< (first (.get m 1 0)) (:min_y @base-atom))
+            (swap! base-atom  merge {:min_y (first (.get m 1 0))}))
+              (recur (dec x) ))))
+      (if (< (:min_x @base-atom) 0)
+        (swap! base-atom  merge {:max_x (- (:max_x @base-atom) (:min_x @base-atom))}))
+      (if (< (:min_y @base-atom) 0)
+        (swap! base-atom  merge {:max_y (- (:max_y @base-atom) (:min_y @base-atom))}))
     @base-atom))
+
 
 (defn stitch [img-a img-b]
   (let [res (Mat.)
@@ -346,29 +357,9 @@
   (def row (.rows keyImage))
 
   (def keyImage (first rsiv))
-  (def h (calculate-homography (first rsiv) (second rsiv)))
-  (def base-points (create-base-points keyImage))
-  (def base-p-calc
-     (for [x (range 0 (.rows base-points))]
-      (matrix-multiplication h (.t (.row base-points x)))))
-
-
-
-  (loop [x (dec (.rows base-points))
-         base-atom (atom {:min_x Integer/MAX_VALUE :min_y Integer/MAX_VALUE
-            :max_x Integer/MIN_VALUE :max_y Integer/MIN_VALUE })]
-    (if (< x 0)
-      base-atom
-       (let [m (matrix-multiplication h (.t (.row base-points x)))]
-        (if (> (first (.get m 0 0)) (:max_x @base-atom))
-          (swap! base-atom  merge {:max_x (first (.get m 0 0))}) (println "NO"))
-        (if (> (first (.get m 1 0)) (:max_y @base-atom))
-          (swap! base-atom  merge {:max_y (first (.get m 1 0))}) (println "NO"))
-        (if (< (first (.get m 0 0)) (:min_x @base-atom))
-          (swap! base-atom  merge {:min_x (first (.get m 0 0))}) (println "NO"))
-        (if (< (first (.get m 1 0)) (:min_y @base-atom))
-          (swap! base-atom  merge {:min_y (first (.get m 1 0))}) (println "NO"))
-            (recur (dec x) base-atom))))
+  (def h (calculate-homography (second rsiv) (first rsiv)))
+  (def inv-h (.inv h))
+  (find-dimensions inv-h keyImage)
 
 
 
