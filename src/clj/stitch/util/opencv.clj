@@ -38,7 +38,7 @@
 
 (defn matrix-multiplication [m1 m2]
   (let [res-mat (Mat.)]
-    (Core/gemm h p2 1  (Mat.) 0 res-mat 0)
+    (Core/gemm m1 m2 1  (Mat.) 0 res-mat 0)
     res-mat))
 
 ;; ----------------------------------------------------------------
@@ -84,7 +84,7 @@
     (.fromArray m a)
     m))
 
-;;Function for initial image base points setup 
+;;Function for initial image base points setup
 (defn create-base-points [img]
   (let [rows (.rows img)
         cols (.cols img)
@@ -277,14 +277,24 @@
   (doto src-img
     (.copyTo dest-img)))
 
-(defn ludnica
-  [ivec]
-  (map (fn [[w i]] (let [r (.rows i)
-                         c (.cols i)
-                         r (rect 0 0 c r)]
-                         (copy-to i (Mat. w r))
-                         w))
-                  ivec))
+(defn find-dimensions [h img]
+  (let [base-points (create-base-points img)
+        base-atom (atom {:min_x Integer/MAX_VALUE :min_y Integer/MAX_VALUE
+           :max_x Integer/MIN_VALUE :max_y Integer/MIN_VALUE })]
+  (loop [x (dec (.rows base-points))]
+    (if (< x 0)
+      base-atom
+       (let [m (matrix-multiplication h (.t (.row base-points x)))]
+        (if (> (first (.get m 0 0)) (:max_x @base-atom))
+          (swap! base-atom  merge {:max_x (first (.get m 0 0))}))
+        (if (> (first (.get m 1 0)) (:max_y @base-atom))
+          (swap! base-atom  merge {:max_y (first (.get m 1 0))}))
+        (if (< (first (.get m 0 0)) (:min_x @base-atom))
+          (swap! base-atom  merge {:min_x (first (.get m 0 0))}))
+        (if (< (first (.get m 1 0)) (:min_y @base-atom))
+          (swap! base-atom  merge {:min_y (first (.get m 1 0))}))
+            (recur (dec x) ))))
+    @base-atom))
 
 (defn stitch [img-a img-b]
   (let [res (Mat.)
@@ -309,10 +319,10 @@
 
 (comment
 
-  (def i1 (read-image-resource "test_stitches/1/a1.JPG"))
-  (def i2 (read-image-resource "test_stitches/1/a2.JPG"))
-  (def i3 (read-image-resource "test_stitches/1/a3.JPG"))
-  (def i4 (read-image-resource "test_stitches/1/a4.JPG"))
+  (def i1 (read-image-resource "scans/milos/13/a1.JPG"))
+  (def i2 (read-image-resource "scans/milos/13/a2.JPG"))
+  (def i3 (read-image-resource "scans/milos/13/a3.JPG"))
+  (def i4 (read-image-resource "scans/milos/13/a4.JPG"))
   (def i5 (read-image-resource "test_stitches/1/a5.JPG"))
   (def i6 (read-image-resource "test_stitches/1/a6.JPG"))
   (def i7 (read-image-resource "test_stitches/1/a7.JPG"))
@@ -341,6 +351,25 @@
   (def base-p-calc
      (for [x (range 0 (.rows base-points))]
       (matrix-multiplication h (.t (.row base-points x)))))
+
+
+
+  (loop [x (dec (.rows base-points))
+         base-atom (atom {:min_x Integer/MAX_VALUE :min_y Integer/MAX_VALUE
+            :max_x Integer/MIN_VALUE :max_y Integer/MIN_VALUE })]
+    (if (< x 0)
+      base-atom
+       (let [m (matrix-multiplication h (.t (.row base-points x)))]
+        (if (> (first (.get m 0 0)) (:max_x @base-atom))
+          (swap! base-atom  merge {:max_x (first (.get m 0 0))}) (println "NO"))
+        (if (> (first (.get m 1 0)) (:max_y @base-atom))
+          (swap! base-atom  merge {:max_y (first (.get m 1 0))}) (println "NO"))
+        (if (< (first (.get m 0 0)) (:min_x @base-atom))
+          (swap! base-atom  merge {:min_x (first (.get m 0 0))}) (println "NO"))
+        (if (< (first (.get m 1 0)) (:min_y @base-atom))
+          (swap! base-atom  merge {:min_y (first (.get m 1 0))}) (println "NO"))
+            (recur (dec x) base-atom))))
+
 
 
 )
