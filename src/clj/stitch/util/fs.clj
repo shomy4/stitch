@@ -66,7 +66,7 @@
 (defn list-dir
   "List files and directories under `path`."
   [path]
-  (seq (.listFiles (file path))))
+  (sort (seq (.listFiles (file path)))))
 
 (defmacro ^:private predicate [s path]
   `(if ~path

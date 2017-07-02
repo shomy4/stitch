@@ -7,7 +7,7 @@
 
 
 (def S-SCALE
-  1.2)
+  1.1)
 
 ;; ----------------------------------------------------------------
 ;; Highgui
@@ -31,7 +31,7 @@
 
 (defn identity-mat [rows cols type]
   (Mat/eye rows cols type))
-  
+
 (defn size
   [img]
   (.size img))
@@ -47,6 +47,35 @@
     (Core/gemm m1 m2 1  (Mat.) 0 res-mat 0)
     res-mat))
 
+(defn add
+  ([img1 img2]
+    (let [add-res (Mat.)]
+      (Core/add img1 img2 add-res)
+      add-res))
+  ([img1 img2 mask]
+    (let [add-res (Mat.)]
+      (Core/add img1 img2 add-res mask)
+      add-res)))
+
+(defn bitwise_and [img1 img2]
+  (let [res (Mat.)]
+    (Core/bitwise_and img1 img2 res)
+    res))
+
+(defn bitwise_not [img1]
+  (let [res-not (Mat.)]
+    (Core/bitwise_not img1 res-not)
+    res-not))
+
+(defn bitwise_or [img1 img2]
+  (let [res (Mat.)]
+    (Core/bitwise_or img1 img2 res)
+    res))
+
+(defn bitwise_xor [img1 img2]
+  (let [res (Mat.)]
+    (Core/bitwise_xor img1 img2 res)
+    res))
 ;; ----------------------------------------------------------------
 ;; Feature detection
 ;; ----------------------------------------------------------------
@@ -95,8 +124,11 @@
   (let [rows (.rows img)
         cols (.cols img)
         mat-bp (Mat. 4 3 CvType/CV_64FC1 (Scalar. 0 0))]
-        (.put mat-bp 0 0 (double-array [0 0 1 cols 0 1 0 rows 1 cols rows 1] ))
+        (.put mat-bp 0 0
+          (double-array [0 0 1 cols 0 1 0 rows 1 cols rows 1] ))
     mat-bp))
+
+
 
 
 
@@ -123,22 +155,24 @@
     (Imgproc/blur img blurred (Size. k-s k-s))
     blurred))
 
-(defn threshold
-  [img threshold max]
-  (let [result (clone img)]
-    (Imgproc/threshold img result threshold max Imgproc/THRESH_BINARY)
-    result))
-
 (defn convert-to-gray [img]
   (let [grey (Mat.)]
-  (Imgproc/cvtColor img grey Imgproc/COLOR_RGB2GRAY)
-  grey))
+    (Imgproc/cvtColor img grey Imgproc/COLOR_RGB2GRAY)
+    grey))
+
+(defn threshold
+  [img threshold max]
+  (let [result (Mat.)
+        gray (convert-to-gray img)]
+    (Imgproc/threshold gray result threshold max Imgproc/THRESH_BINARY)
+    result))
+
+
 
 (defn bounding-rect [img]
   (let [thresh (threshold img 1 255)
-        grey (convert-to-gray thresh)
         contours (java.util.ArrayList. )]
-        (Imgproc/findContours grey contours (Mat.)
+        (Imgproc/findContours thresh contours (Mat.)
           Imgproc/RETR_LIST Imgproc/CHAIN_APPROX_SIMPLE)
 
         (Imgproc/boundingRect (last (vec contours)))
@@ -259,8 +293,7 @@
       (println "Good matches" (count good-matches-vec))
       (.fromList matK1 img-points-list-a)
       (.fromList matK2 img-points-list-b)
-      (draw-matches! img-a kp-a img-b kp-b good img-matches)
-      (write-image "test.jpg" img-matches)
+
       (Calib3d/findHomography   matK1 matK2 Calib3d/RANSAC 10)
       )))
 
@@ -283,6 +316,7 @@
   (doto src-img
     (.copyTo dest-img)))
 
+
 (defn find-dimensions [h img]
   (let [base-points (create-base-points img)
         base-atom (atom {:min_x Integer/MAX_VALUE :min_y Integer/MAX_VALUE
@@ -300,11 +334,25 @@
           (if (< (first (.get m 1 0)) (:min_y @base-atom))
             (swap! base-atom  merge {:min_y (first (.get m 1 0))}))
               (recur (dec x) ))))
+      (if (< (:max_x @base-atom) (.cols img))
+        (swap! base-atom  merge {:max_x (.cols img)}))
+      (if (< (:max_y @base-atom) (.rows img))
+        (swap! base-atom  merge {:max_y (.rows img)}))
       (if (< (:min_x @base-atom) 0)
         (swap! base-atom  merge {:max_x (- (:max_x @base-atom) (:min_x @base-atom))}))
       (if (< (:min_y @base-atom) 0)
         (swap! base-atom  merge {:max_y (- (:max_y @base-atom) (:min_y @base-atom))}))
     @base-atom))
+
+
+(defn create-move-homography [h img]
+  (let [expanded-dimensions (find-dimensions h img)
+        move_h (identity-mat 3 3 CvType/CV_64FC1)]
+    (if (< (:min_x expanded-dimensions) 0)
+      (.put move_h 0 0 (double-array [1 0 (Math/abs (:min_x expanded-dimensions))])))
+    (if (< (:min_x expanded-dimensions) 0)
+      (.put move_h 1 0 (double-array [0 1 (Math/abs (:min_y expanded-dimensions))])))
+      move_h))
 
 
 (defn stitch [img-a img-b]
@@ -324,21 +372,54 @@
               b-res)))
 
 
+(defn stitch2 [img-a img-b]
+  (let [res (Mat.)
+        homography (calculate-homography img-a img-b)
+        inverse-h (inverse homography)
+        dimensions (find-dimensions inverse-h img-a)
+        s (Size. (int (* (:max_y dimensions) S-SCALE)) (int (* (:max_x dimensions) S-SCALE)))
+        move_h (create-move-homography inverse-h img-a)
+        mod_inv_h (matrix-multiplication move_h inverse-h)
+        res1 (Mat.)
+        res2 (Mat.)]
+        (warp-perspective img-a move_h s res1)
+        (warp-perspective img-b mod_inv_h s res2)
+        (let [result (Mat/zeros (.rows res1) (.cols res1) CvType/CV_8UC3)
+              mask (bitwise_not (threshold res2 0 255))
+              result1 (add res1 result  mask)
+              final-img (add res2 result1)]
+              final-img)))
+
+(defn remove-bg [img]
+  (let [bbox (bounding-rect img)
+        b-res (Mat. img bbox)]
+        b-res))
 ;; ----------------------------------------------------------------
 ;; REPL PLAYGROUND STITCHING
 ;; ----------------------------------------------------------------
 
 (comment
 
-  (def i1 (read-image-resource "scans/milos/13/a1.JPG"))
-  (def i2 (read-image-resource "scans/milos/13/a2.JPG"))
-  (def i3 (read-image-resource "scans/milos/13/a3.JPG"))
-  (def i4 (read-image-resource "scans/milos/13/a4.JPG"))
-  (def i5 (read-image-resource "test_stitches/1/a5.JPG"))
-  (def i6 (read-image-resource "test_stitches/1/a6.JPG"))
-  (def i7 (read-image-resource "test_stitches/1/a7.JPG"))
-  (def i8 (read-image-resource "test_stitches/1/a8.JPG"))
-  (def i9 (read-image-resource "test_stitches/1/a9.JPG"))
+  (def i1
+    (read-image-resource "scans/milos/24/DJI_0052.JPG"))
+  (def i2
+    (read-image-resource "scans/milos/24/DJI_0053.JPG"))
+  (def i3
+    (read-image-resource "scans/milos/24/DJI_0054.JPG"))
+  (def i4
+    (read-image-resource "scans/milos/24/DJI_0055.JPG"))
+    (def i5
+       (read-image-resource "scans/milos/24/DJI_0056.JPG"))
+  (def i6
+     (read-image-resource "scans/milos/24/DJI_0057.JPG"))
+  (def i7
+    (read-image-resource "scans/milos/24/DJI_0058.JPG"))
+  (def i8
+    (read-image-resource "scans/milos/24/DJI_0059.JPG"))
+  (def i9
+    (read-image-resource "scans/milos/24/DJI_0060.JPG"))
+  (def i10
+    (read-image-resource "scans/milos/24/DJI_0061.JPG"))
 
   (def geocordinates [{:longitude 45.132 :latitude 19.221}
                 {:longitude 45.134 :latitude 19.220}
@@ -349,18 +430,30 @@
   (sort-by #(vec (map % [:longitude :latitude])) geocordinates)
 
 
-  (def iv1 [i1 i2 i3 i4 i5])
-  (def iv [i2 i1])
+    (def iv [i1 i2 i3 i4 i5 i6 i7 i8 i9 i10])
   (def rsiv (map #(resize-to-scale % 0.25) iv))
   (def keyImage (first rsiv))
   (def col (.cols keyImage))
   (def row (.rows keyImage))
-
-  (def keyImage (first rsiv))
-  (def h (calculate-homography (second rsiv) (first rsiv)))
+  (def res1 (Mat.))
+  (def res2 (Mat.))
+  (def h (calculate-homography keyImage (second rsiv)))
   (def inv-h (.inv h))
-  (find-dimensions inv-h keyImage)
+  (def dimensions (find-dimensions inv-h keyImage))
+  (def s (Size. (int (:max_y dimensions)) (int (:max_x dimensions))))
+  (def move_h (create-move-homography inv-h keyImage))
+  (def mod_inv_h (matrix-multiplication move_h inv-h))
 
-
-
+  (write-image "move_ha.jpg" res1)
+  (write-image "move_ha2.jpg" res2)
+  (println "H")
+  (println (.dump h))
+  (println "Move H")
+  (println (.dump move_h))
+  (println "Mod Inv H")
+  (println (.dump mod_inv_h))
+  (def )
+  (def re-add-1 (add res1 result-img  (bitwise_not (threshold res2 1 255))))
+  (def final-img (add res2 re-add-1))
+  (write-image "test.jpg" final-img)
 )
