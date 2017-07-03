@@ -21,9 +21,11 @@ Following example shows how to use stitch functionality from
 the REPL. Images *i1.jpg* and *i2.jpg* will be loaded as input images and the result of their stitching will be stored in *result.jpg*.
 
 Image *i1.jpg*:
+
 ![i1](/doc/i1.jpg "i1.jpg")
 
 Image *i2.jpg*:
+
 ![i2](/doc/i2.jpg "i2.jpg")
 
 ```clojure
@@ -51,12 +53,13 @@ true
 ```
 
 And the result image is:
+
 ![Result image](/doc/result.jpg "Result image")
 
 ## Running
 
 To run Web application locally run the following commands,
-assuming that the [prerequisites](#Prerequisites) are satisfied.
+assuming that the [prerequisites](#prerequisites) are satisfied.
 
 ```bash
 root@machine$  service postgresql start
