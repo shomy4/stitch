@@ -3,6 +3,7 @@
             [stitch.routes.services.auth :as auth]
             [stitch.routes.services.upload-scan :as upload-scan]
             [stitch.routes.services.scans :as scans]
+            [stitch.routes.services.download-image :as down]
             [stitch.routes.services.stitch :as stitch]
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
@@ -69,7 +70,9 @@
        :path-params [owner :- String]
        :summary "list users scans"
        :return [Scan]
-       (scans/list-scans owner)))
+       (scans/list-scans owner))
+   (GET "/download-image/:id" [id]
+    (down/download-image id)))
 
 (defapi restricted-service-routes
   {:swagger {:ui "/swagger-ui-private"

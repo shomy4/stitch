@@ -9,17 +9,25 @@
            goog.net.EventType
            [goog.events EventType]))
 
+(defn update-image-thumbnail [res]
+  (set!
+    (.-src
+      (.getElementById js/document (:id res)))
+        (:result res)))
+
 (defn handle-stitching [scan_id]
   (let [req {:uri             "/stitch/"
              :method          :get
              :params          {:scan_id scan_id}
-             :handler         #(js/alert "ke")
+             :handler         update-image-thumbnail
              :response-format (ajax/json-response-format {:keywords? true})
              :format          (ajax/json-request-format)
              :keywords?       true}]
     (ajax/ajax-request req)))
 
-
+(defn download-image [id]
+  (set! (.-location js/document)
+    (str "/download-image/" id)))
 
 (defn image-modal [link]
  (fn []
@@ -29,11 +37,14 @@
       :src link}]
     [:div.modal-backdrop.fade.in]]))
 
-(defn thumb-link [{:keys [id status name description]}]
+(defn thumb-link [{:keys [id status name description result]}]
   [:div.col-sm-4
      [:img
-    {:src      (str "img/scan.jpeg" )
-     :on-click #(handle-stitching id)}]
+     {:src      (if (= status 2) result (str "img/scan.jpeg" ))
+     :width "201px"
+     :id (str "scan_image_" id)
+     :on-click (fn [] (if (not= status 2) (handle-stitching id) (download-image id)))}
+     ]
                     [:div.text-xs-center>div.btn.btn-danger name  status]])
 
 (defn gallery [links]
