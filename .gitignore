@@ -1,0 +1,6 @@
+target/
+*.log
+tmp/
+test_stitches/
+.lein-repl-history
+.nrepl-port

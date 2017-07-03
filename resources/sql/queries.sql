@@ -27,6 +27,12 @@ INSERT INTO scan
 VALUES (:owner,  :name, :description, 1)
 RETURNING id
 
+-- :name update-scan! :! :n
+-- :doc update an existing user record
+UPDATE scan
+SET status = :status, result = :result
+WHERE id = :id
+
 -- :name get-scan :? :1
 -- :doc retrieve a scan given the id.
 SELECT * FROM scan
@@ -50,9 +56,10 @@ INSERT INTO image
 (image,  thumbnail, geometry, scan_id)
 VALUES (:image,  :thumbnail, ST_SetSRID(ST_MakePoint(:long, :lat), 4326), :scan_id)
 RETURNING id
--- :name get-images
+
+-- :name list-scan-images
 -- :doc retrieve images given the scan_id.
-SELECT * FROM image
+SELECT id, image, thumbnail, geometry, ST_X(geometry) as lat, ST_Y(geometry) as long, scan_id FROM image
 WHERE scan_id = :scan_id
 
 

@@ -1,6 +1,6 @@
 (defproject stitch "0.1.0-SNAPSHOT"
 
-  :description "FIXME: write description"
+  :description "Aerial Images Stitcher"
   :url "http://example.com/FIXME"
 
   :dependencies [[buddy "1.3.0"]
