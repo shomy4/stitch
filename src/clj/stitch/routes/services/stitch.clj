@@ -6,7 +6,8 @@
             [ring.util.http-response :refer :all]
             [clojure.tools.logging :as log]))
 
-
+(def RESIZE-SCALE
+  0.25)
 
 (defn parse-int [s]
   (Integer. (re-find #"[0-9]*" s)))
@@ -17,7 +18,7 @@
         username (:identity session)
         imgs (db/list-scan-images {:scan_id scan_id})
         ordered-dict-imgs (sort-by #(vec (map % [:image])) imgs)
-        ordered-mat-imgs (map #(cv2/resize-to-scale (cv2/read-image-resource (:image %)) 0.25) ordered-dict-imgs)
+        ordered-mat-imgs (map #(cv2/resize-to-scale (cv2/read-image-resource (:image %)) RESIZE-SCALE) ordered-dict-imgs)
         stitched (reduce cv2/stitch2 ordered-mat-imgs)
         cropped (cv2/remove-bg stitched)
         media-path (str "results/" username "/" (quot (System/currentTimeMillis) 1000) ".jpg")]

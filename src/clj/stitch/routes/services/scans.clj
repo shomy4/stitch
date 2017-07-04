@@ -6,5 +6,4 @@
 
 
 (defn list-scans [owner]
-  (println (db/list-user-scans {:owner owner}))
   (ok (db/list-user-scans {:owner owner})))

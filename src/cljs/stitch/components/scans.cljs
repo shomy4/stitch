@@ -1,5 +1,6 @@
 (ns stitch.components.scans
   (:require [goog.events :as gev]
+            [goog.dom    :as dom]
             [reagent.core :as reagent :refer [atom]]
             [reagent.session :as session]
             [stitch.components.common :as c]
@@ -9,25 +10,25 @@
            goog.net.EventType
            [goog.events EventType]))
 
-(defn update-image-thumbnail [res]
-  (set!
-    (.-src
-      (.getElementById js/document (:id res)))
-        (:result res)))
+(defn download-image [id]
+ (set! (.-location js/document)
+   (str "/download-image/" id)))
+
+(defn update-image-thumbnail [response]
+  (let [stitched (dom/getElement (str "scan_image_" (:id response)))]
+  (goog.dom.setProperties
+    stitched
+    (clj->js {:src (:result  response)}))
+    (gev/removeAll stitched goog.events.EventType.CLICK)
+    (gev/listen stitched goog.events.EventType.CLICK (fn [e] (download-image (:id response))))))
+
+
 
 (defn handle-stitching [scan_id]
-  (let [req {:uri             "/stitch/"
-             :method          :get
-             :params          {:scan_id scan_id}
-             :handler         update-image-thumbnail
-             :response-format (ajax/json-response-format {:keywords? true})
-             :format          (ajax/json-request-format)
-             :keywords?       true}]
-    (ajax/ajax-request req)))
+  (ajax/GET (str "/stitch/?scan_id=" scan_id)
+            {:handler update-image-thumbnail}))
 
-(defn download-image [id]
-  (set! (.-location js/document)
-    (str "/download-image/" id)))
+
 
 (defn image-modal [link]
  (fn []
@@ -39,13 +40,15 @@
 
 (defn thumb-link [{:keys [id status name description result]}]
   [:div.col-sm-4
+    [:a.thumb
      [:img
      {:src      (if (= status 2) result (str "img/scan.jpeg" ))
      :width "201px"
      :id (str "scan_image_" id)
      :on-click (fn [] (if (not= status 2) (handle-stitching id) (download-image id)))}
      ]
-                    [:div.text-xs-center>div.btn.btn-danger name  status]])
+     ]
+                    [:div.text-xs-center>div.btn.btn-danger name ]])
 
 (defn gallery [links]
  [:div.text-xs-center
@@ -76,16 +79,18 @@
        [[:li.page-item>a.page-link.btn.btn-primary
          {:on-click #(swap! page back pages)
           :class    (when (= @page 0) "disabled")}
-         [:span "Â«"]]]
+         [:span "<"]]]
        (map (partial nav-link page) (range pages))
        [[:li.page-item>a.page-link.btn.btn-primary
          {:on-click #(swap! page forward pages)
           :class    (when (= @page (dec pages)) "disabled")}
-         [:span "Â»"]]]))))
+         [:span ">"]]]))))
 
 (defn fetch-scans! [owner]
  (ajax/GET (str "/list-scans/" owner)
            {:handler (fn [obj]
+                        (.log js/console "FETCHED")
+                        (.log js/console obj)
                         (session/put! :scans obj)
                         (.log js/console (clj->js obj)))}))
 
