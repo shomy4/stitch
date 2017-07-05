@@ -35,10 +35,10 @@
                 :method   "POST"}
          [:fieldset.form-group
           [:label {:for "name"} "Name"]
-          [:input.form-control {:id "name" :name "name" :type "text" :required true}]]
+          [:input.form-control {:id "name" :name "name" :type "text" }]]
           [:fieldset.form-group
            [:label {:for "description"} "Description"]
-           [:input.form-control {:id "description" :name "description" :type "text" :required true}]]
+           [:input.form-control {:id "description" :name "description" :type "text" }]]
           [:fieldset.form-group
            [:label {:for "file"} "select an image for upload"]
            [:input.form-control {:id "file" :name "file" :type "file" :required true}]]]

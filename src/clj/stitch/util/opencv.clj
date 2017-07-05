@@ -257,7 +257,7 @@
         dists   (map #(.distance %) matches)
         d-min (apply min dists)
         d-max (apply max dists)
-        good (filter (fn [x] (<= (.distance x) (max (* 5 d-min) 0.005))) matches)]
+        good (filter (fn [x] (<= (.distance x) (max (* 4.5 d-min) 0.0045))) matches)]
     (dmatch-mat good)))
 
 (defn calculate-homography [img-a img-b]
