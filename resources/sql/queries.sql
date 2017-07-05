@@ -42,6 +42,7 @@ WHERE id = :id
 -- :doc retrieve a scan given the id.
 SELECT * FROM scan
 WHERE owner = :owner
+ORDER BY status
 
 -- :name delete-scan! :! :n
 -- :doc delete a scan given the id
